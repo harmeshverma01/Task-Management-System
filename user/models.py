@@ -32,7 +32,11 @@ class User(AbstractBaseUser):
         return True
     
     def __str__(self) -> str:
-        return self.name
+        return self.email
     
     
 
+class Assign(models.Model):
+    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_employee')
+    manager = models.ForeignKey(User, on_delete=models.CASCADE)
+    
