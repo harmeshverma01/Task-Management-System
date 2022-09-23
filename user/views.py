@@ -2,6 +2,7 @@ from rest_framework import authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
+from django.core.paginator import Paginator
 
 from django.contrib.auth.hashers import make_password
 from rest_framework.authtoken.models import Token
@@ -67,7 +68,10 @@ class ManagerView(APIView):
     
     def get(self, request, id=None):
         manager = User.objects.filter(role='manager')
-        serializer = self.serializer_class(manager, many=True)
+        page_number = request.GET.get('page_number', 1)
+        page_size = request.GET.get('page_size', 50)
+        paginator = Paginator(manager, page_size)
+        serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)
 
 
