@@ -1,10 +1,11 @@
 from rest_framework import serializers
-from .models import Assign, User
+from .models import User
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['name', 'email', 'password', 'role']
+        fields = ['name', 'email',  'role']
+        
        
         
 class LoginSerializer(serializers.ModelSerializer):
@@ -13,7 +14,3 @@ class LoginSerializer(serializers.ModelSerializer):
         fields = ['email', 'password']
     
         
-class AssignSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Assign
-        fields = '__all__'       

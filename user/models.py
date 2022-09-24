@@ -36,7 +36,4 @@ class User(AbstractBaseUser):
     
     
 
-class Assign(models.Model):
-    employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_employee')
-    manager = models.ForeignKey(User, on_delete=models.CASCADE)
     
