@@ -4,8 +4,6 @@ from user.models import User
 
 # Create your models here.
 
-# test changes 
-
 class Task(models.Model):
     CHOICES = (
         ("Todo" , "Todo"),
@@ -18,6 +16,9 @@ class Task(models.Model):
     descriptions = models.TextField()
     status = models.CharField(choices=CHOICES, max_length=20, default='Todo')
     
-    
     def __str__(self) -> str:
         return self.title
+    
+class CreateUser(models.Model):
+    user1 = models.CharField(max_length=50)
+    user2 = models.CharField(max_length=50)    
