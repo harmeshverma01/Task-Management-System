@@ -17,7 +17,10 @@ class TaskView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            user = request.data.get('user')
+            task = Task.objects.filter(user=user)
+            if task.exists():
+                serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
     
@@ -38,20 +41,6 @@ class TaskView(APIView):
         return Response(({'message': 'task is deleted successfully'}), status=status.HTTP_204_NO_CONTENT)
                 
 
-class CheckCompletedtaskView(APIView):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [Manager_required]
-    serializer_class = TaskSerializer
-    
-    def get(self, request, id=None):
-        task = Task.objects.all()
-        completed = request.GET.get('completed', None)
-        if completed is not None:
-            task = task.filter(completed=completed)
-        serializer = self.serializer_class(task, many=True)
-        return Response(serializer.data)
-    
-    
 class TaskStatusView(APIView):
     serializer_class = TaskSerializer
     authentication_classes = [authentication.TokenAuthentication]
@@ -62,5 +51,14 @@ class TaskStatusView(APIView):
         return Response(serializer.data)    
 
     
-
+class CheckTaskView(APIView):
+    serializer_class = TaskSerializer
+    permission_classes = [Manager_required]
+    
+    def get(self, request, id=None):
+        task = Task.objects.filter(status='completed')
+        serializer = self.serializer_class(task, many=True)
+        return Response(serializer.data)
+    
+   
                 

@@ -8,9 +8,9 @@ from django.contrib.auth.hashers import make_password
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 
-from .serializer import AssignSerializer, LoginSerializer, UserSerializer
+from .serializer import  LoginSerializer, UserSerializer
 from .utils import admin_required
-from .models import Assign, User
+from .models import  User
 # Create your views here.
 
 class Userview(APIView):
@@ -89,29 +89,5 @@ class RegisterView(APIView):
         return Response(({'details' : 'Something went wrong'}), status=status.HTTP_404_NOT_FOUND)
 
 
-class AssignUserView(APIView):
-    serializer_class = AssignSerializer
-    permission_classes = [admin_required]
-    authentication_classes = [authentication.TokenAuthentication]
-    
-    def get(self, request, id=None):
-        assign = Assign.objects.all()
-        serializer = self.serializer_class(assign, many=True)
-        return Response(serializer.data)
-    
-    def post(self, request, id=None):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors)
-    
-    def patch(self, request, id=None):
-        assign = Assign.objects.get(id=id)
-        serializer = self.serializer_class(assign, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
-        return Response(serializer.errors)
-        
+
         
