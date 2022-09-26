@@ -1,6 +1,8 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import authentication
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 
 from task.serializer import TaskSerializer
@@ -15,12 +17,11 @@ class TaskView(APIView):
     permission_classes = [Manager_required]
     
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        manager = request.data.get('manager')
+        task = get_object_or_404(Task, manager=manager)
+        serializer = self.serializer_class(task, data=request.data)
         if serializer.is_valid():
-            user = request.data.get('user')
-            task = Task.objects.filter(user=user)
-            if task.exists():
-                serializer.save()
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
     
@@ -53,11 +54,13 @@ class TaskStatusView(APIView):
     
 class CheckTaskView(APIView):
     serializer_class = TaskSerializer
-    permission_classes = [Manager_required]
     
     def get(self, request, id=None):
-        task = Task.objects.filter(status='completed')
-        serializer = self.serializer_class(task, many=True)
+        task = Task.objects.filter(status='Todo')
+        page_number = request.GET.get('page_number', 1)
+        page_size = request.GET.get('page_size', 50)
+        paginator = Paginator(task, page_size)
+        serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)
     
    
