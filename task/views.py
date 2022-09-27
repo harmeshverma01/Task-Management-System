@@ -1,9 +1,10 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import authentication
+from django.core.paginator import Paginator
 from rest_framework import status
 
-from task.serializer import TaskSerializer
+from task.serializer import CreateSerializer, TaskSerializer
 from user.utils import Manager_required
 from .models import Task
 
@@ -15,15 +16,17 @@ class TaskView(APIView):
     permission_classes = [Manager_required]
     
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            user = request.data.get('user')
-            task = Task.objects.filter(user=user)
-            if task.exists():
+        user = request.data.get('user')
+        if user == str(request.user.id):
+            return Response(({'message': 'you can not assign task because user and manager should be same'}))
+        else:
+            request.data["manager"] = request.user.id
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
                 serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors)
-    
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors)
+        
     def patch(self, request, id=None):
         try:
             task = Task.objects.get(id=id)
@@ -49,16 +52,33 @@ class TaskStatusView(APIView):
         task = Task.objects.filter(user__id=request.user.id)
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)    
-
     
 class CheckTaskView(APIView):
     serializer_class = TaskSerializer
-    permission_classes = [Manager_required]
     
     def get(self, request, id=None):
-        task = Task.objects.filter(status='completed')
-        serializer = self.serializer_class(task, many=True)
+        task = Task.objects.all()
+        page_number = request.GET.get('page_number', 1)
+        page_size = request.GET.get('page_size', 50)
+        paginator = Paginator(task, page_size)
+        serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)
-    
    
                 
+class UserstatusView(APIView):
+    serializer_class = CreateSerializer
+    
+    def post(self, request, id=None):
+        user1 = request.data.get('user1')
+        user2 = request.data.get('user2')
+        if user1 == user2: 
+            return Response(({'message': 'you cannot access because both value should be same'}))
+        else:
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors)
+                            
+                            
+                            
