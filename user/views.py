@@ -88,6 +88,3 @@ class RegisterView(APIView):
             return Response({'token' : str(token[0])})
         return Response(({'details' : 'Something went wrong'}), status=status.HTTP_404_NOT_FOUND)
 
-
-
-        

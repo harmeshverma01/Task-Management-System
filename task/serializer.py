@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from task.models import CreateUser, Task
+from task.models import  Task
 
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,8 +8,3 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
         
-class CreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CreateUser
-        fields = '__all__'
-                

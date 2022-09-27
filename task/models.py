@@ -19,6 +19,3 @@ class Task(models.Model):
     def __str__(self) -> str:
         return self.title
     
-class CreateUser(models.Model):
-    user1 = models.CharField(max_length=50)
-    user2 = models.CharField(max_length=50)    
