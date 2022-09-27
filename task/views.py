@@ -1,3 +1,4 @@
+from http import server
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import authentication
@@ -65,13 +66,11 @@ class CheckTaskView(APIView):
     
     def patch(self, request, id=None):
         try:
-            manager = request.data.get('manager')
-            status = request.data.get('status')
-            task = get_object_or_404(Task, manager=manager, status=status)
+            task = Task.objects.get(id=id)
             serializer = self.serializer_class(task, data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data)
+                return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
             return Response(serializer.errors)
         except:
             return Response(({'message': 'details not found'}))
@@ -98,8 +97,10 @@ class TaskStatusView(APIView):
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)   
     
-    
-    
-
-    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
     
