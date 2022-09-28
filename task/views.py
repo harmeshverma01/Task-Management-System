@@ -1,29 +1,28 @@
-from http import server
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import authentication
 from django.core.paginator import Paginator
-from django.shortcuts import get_object_or_404
+from rest_framework import authentication
+from rest_framework.views import APIView
 from rest_framework import status
 
-from task.serializer import  TaskSerializer
 from user.utils import Manager_required, admin_required
+from task.serializer import  TaskSerializer
 from user.models import User
 from .models import Task
+
 # Create your views here.
 
 class TaskView(APIView):
-    serializer_class = TaskSerializer
     authentication_classes = [authentication.TokenAuthentication]
+    serializer_class = TaskSerializer
     permission_classes = [Manager_required]
     
     def post(self, request, id=None):
         user = request.data.get('user')
         if user == str(request.user.id): 
-            return Response(({'message': 'you can not assign task by own'}))
+            return Response(({'message': "you can't assign task by own"}))
         is_admin = User.objects.get(id=user)
         if is_admin.role=="admin":
-            return Response(({'message': 'you can not assign task to admin'}))
+            return Response(({'message': "you can't assign task to admin"}))
         request.data["manager"] = request.user.id
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -54,10 +53,17 @@ class CheckTaskView(APIView):
     permission_classes = [admin_required]
     
     def get(self, request, id=None):
+        params = self.request.query_params
         task = Task.objects.all()
-        manager = request.GET.get('manager', None)
-        if manager is not None:
+        manager = params.get('manager', None)
+        if manager:
             task = task.filter(manager=manager)
+        status = params.get('status', None)    
+        if status:
+            task = task.filter(status=status)
+        user = params.get('user', None)    
+        if user:
+            task = task.filter(user=user)
         page_number = request.GET.get('page_number', 1)
         page_size = request.GET.get('page_size', 50)
         paginator = Paginator(task, page_size)
@@ -81,26 +87,46 @@ class ManagerCheckTaskView(APIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [Manager_required]
     
-    
     def get(self, request, id=None):
-        task = Task.objects.filter(manager=request.user.id)
+        params = self.request.query_params
+        task = Task.objects.all()
+        manager = request.user.id
+        if manager:
+            task = task.filter(user=manager)
+        user = params.get('user', None)
+        if user:
+            task = task.filter(user=user)
+        status = params.get('status', None)
+        if status:
+            task = task.filter(status=status)
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)
-
+                
     
 class TaskStatusView(APIView):
     serializer_class = TaskSerializer
     authentication_classes = [authentication.TokenAuthentication]
     
     def get(self, request, id=None):
+        params = self.request.query_params
         task = Task.objects.filter(user__id=request.user.id)
+        manager = params.get('manager', None)
+        if manager:
+            task = task.filter(manager=manager)
+        status = params.get('status', None)
+        if status:
+            task = task.filter(status=status)
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)   
     
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors)
+    
+class ManagertoManagerView(APIView):
+    serializer_class = TaskSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [Manager_required]
+    
+    def get(self, request, id=None):
+        task = Task.objects.filter(manager=request.user.id)
+        serializer = self.serializer_class(task, many=True)
+        return Response(serializer.data)
     
