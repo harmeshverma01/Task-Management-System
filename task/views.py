@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from user.utils import Manager_required, admin_required
-from task.serializer import  TaskSerializer
+from task.serializer import  RatingSerializer, TaskSerializer
 from user.models import User
-from .models import Task
+from .models import Rating, Task
 
 # Create your views here.
 
@@ -127,7 +127,7 @@ class TaskStatusView(APIView):
         paginator = Paginator(task, page_size)
         serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)   
-    
+ 
     
 class ManagertoManagerView(APIView):
     serializer_class = TaskSerializer
@@ -135,11 +135,60 @@ class ManagertoManagerView(APIView):
     permission_classes = [Manager_required]
     
     def get(self, request, id=None):
-        params = self.request.query_params
         task = Task.objects.filter(manager=request.user.id)
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)
     
+
+class TaskCompleteView(APIView):
+    serializer_class = TaskSerializer
+    authentication_classes = [authentication.TokenAuthentication]
     
+    def get(self, request, id=None):
+        task = Task.objects.filter(user__id=request.user.id)
+        title = request.data.get('title')
+        if id:
+            task = task.filter(title=title)
+        serializer = self.serializer_class(task, many=True)
+        return Response(serializer.data)
+    
+    def patch(self, request, id=None):
+        id = request.data.get('id')
+        assign = Task.objects.get(id=id)
+        serializer = self.serializer_class(assign, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
+        return Response(serializer.errors)
         
         
+class TaskRatingView(APIView):
+    serializer_class = RatingSerializer
+    
+    def get(self, request, id=None):
+        rating = Rating.objects.get(id=id)
+        serializer = self.serializer_class(rating, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors)
+    
+    def patch(self, request, id=None):
+        try:
+            rating = Rating.objects.get(id=id)
+            serializer = self.serializer_class(rating, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
+            return Response(serializer.errors)
+        except:
+            return Response(({'message': 'You should be rating before'}), status=status.HTTP_204_NO_CONTENT)
+        
+    
+    
+    
+    
