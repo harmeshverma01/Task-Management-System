@@ -54,16 +54,19 @@ class CheckTaskView(APIView):
     
     def get(self, request, id=None):
         params = self.request.query_params
-        task = Task.objects.all()
-        manager = params.get('manager', None)
+        assign = Task.objects.all()
+        admin = request.user.id
+        if admin:
+            task = assign.filter(manager=admin)
+        manager = params.get('manager')
         if manager:
-            task = task.filter(manager=manager)
-        status = params.get('status', None)    
+            task = assign.filter(manager=manager)
+        status = params.get('status')    
         if status:
-            task = task.filter(status=status)
-        user = params.get('user', None)    
+            task = assign.filter(status=status)
+        user = params.get('user')    
         if user:
-            task = task.filter(user=user)
+            task = assign.filter(user=user)
         page_number = request.GET.get('page_number', 1)
         page_size = request.GET.get('page_size', 50)
         paginator = Paginator(task, page_size)
@@ -89,17 +92,20 @@ class ManagerCheckTaskView(APIView):
     
     def get(self, request, id=None):
         params = self.request.query_params
-        task = Task.objects.all()
+        assign = Task.objects.all()
         manager = request.user.id
         if manager:
-            task = task.filter(user=manager)
-        user = params.get('user', None)
+            task = assign.filter(user=manager)
+        user = params.get('user')
         if user:
-            task = task.filter(user=user)
-        status = params.get('status', None)
+            task = assign.filter(manager=manager, user=user)
+        status = params.get('status')
         if status:
             task = task.filter(status=status)
-        serializer = self.serializer_class(task, many=True)
+        page_number = request.GET.get('page_number', 1)
+        page_size = request.GET.get('page_size', 50)
+        paginator = Paginator(task, page_size)
+        serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)
                 
     
@@ -116,7 +122,10 @@ class TaskStatusView(APIView):
         status = params.get('status', None)
         if status:
             task = task.filter(status=status)
-        serializer = self.serializer_class(task, many=True)
+        page_number = request.GET.get('page_number', 1)
+        page_size = request.GET.get('page_size', 50)
+        paginator = Paginator(task, page_size)
+        serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)   
     
     
@@ -126,7 +135,11 @@ class ManagertoManagerView(APIView):
     permission_classes = [Manager_required]
     
     def get(self, request, id=None):
+        params = self.request.query_params
         task = Task.objects.filter(manager=request.user.id)
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)
     
+    
+        
+        
