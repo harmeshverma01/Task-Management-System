@@ -6,7 +6,6 @@ class admin_required(BasePermission):
             return True
         return False
     
-    
 class Manager_required(BasePermission):
     def has_permission(self, request, view):
         if request.user.role == 'manager':
