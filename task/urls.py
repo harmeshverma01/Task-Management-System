@@ -7,5 +7,7 @@ urlpatterns = [
     path('task_status', TaskStatusView.as_view()),
     path('check_status', CheckTaskView.as_view()),
     path('managercheckstatus', ManagerCheckTaskView.as_view()),
-    path('managertask', ManagertoManagerView.as_view())
+    path('managertask', ManagertoManagerView.as_view()),
+    path('taskcomplete', TaskCompleteView.as_view()),
+    path('taskrating', TaskRatingView.as_view())
 ]
