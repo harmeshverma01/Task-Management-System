@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from task.models import  Rating, Task
+from task.models import  Task
 
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,8 +13,5 @@ class TaskCompleteSerializer(serializers.ModelSerializer):
         fields = ['comment'] 
         
 
-class RatingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Rating
-        fields = '__all__'
+
                

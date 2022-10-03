@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from task.models import  Rating, Task
+from task.models import  Task
 
 # Register your models here.
 
-admin.site.register(Rating)
+
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
