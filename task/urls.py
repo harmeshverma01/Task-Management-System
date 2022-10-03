@@ -8,6 +8,11 @@ urlpatterns = [
     path('check_status', CheckTaskView.as_view()),
     path('managercheckstatus', ManagerCheckTaskView.as_view()),
     path('managertask', ManagertoManagerView.as_view()),
+    
+    path('taskcomplete/<int:id>', TaskCompleteView.as_view()),
     path('taskcomplete', TaskCompleteView.as_view()),
-    path('taskrating', TaskRatingView.as_view())
+    path('taskrating', TaskRatingView.as_view()),
+    path('taskrating/<int:id>', TaskRatingView.as_view())
+
+
 ]

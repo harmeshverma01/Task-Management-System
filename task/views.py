@@ -6,8 +6,8 @@ from rest_framework import status
 
 from user.utils import Manager_required, admin_required
 from task.serializer import  RatingSerializer, TaskSerializer
-from user.models import User
 from .models import Rating, Task
+from user.models import User
 
 # Create your views here.
 
@@ -73,17 +73,6 @@ class CheckTaskView(APIView):
         serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)
     
-    def patch(self, request, id=None):
-        try:
-            task = Task.objects.get(id=id)
-            serializer = self.serializer_class(task, data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
-            return Response(serializer.errors)
-        except:
-            return Response(({'message': 'details not found'}))
-    
     
 class ManagerCheckTaskView(APIView):
     serializer_class = TaskSerializer
@@ -107,7 +96,7 @@ class ManagerCheckTaskView(APIView):
         paginator = Paginator(task, page_size)
         serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)
-                
+    
     
 class TaskStatusView(APIView):
     serializer_class = TaskSerializer
@@ -127,7 +116,8 @@ class TaskStatusView(APIView):
         paginator = Paginator(task, page_size)
         serializer = self.serializer_class(paginator.page(page_number), many=True)
         return Response(serializer.data)   
- 
+    
+    
     
 class ManagertoManagerView(APIView):
     serializer_class = TaskSerializer
@@ -139,44 +129,51 @@ class ManagertoManagerView(APIView):
         serializer = self.serializer_class(task, many=True)
         return Response(serializer.data)
     
-
+    
 class TaskCompleteView(APIView):
     serializer_class = TaskSerializer
     authentication_classes = [authentication.TokenAuthentication]
     
     def get(self, request, id=None):
-        task = Task.objects.filter(user__id=request.user.id)
-        title = request.data.get('title')
         if id:
-            task = task.filter(title=title)
-        serializer = self.serializer_class(task, many=True)
-        return Response(serializer.data)
+            task = Task.objects.get(id=id)
+            serializer = self.serializer_class(task)
+            return Response(serializer.data)
+        else:
+            task = Task.objects.filter(user__id=request.user.id)
+            serializer = self.serializer_class(task, many=True)
+            return Response(serializer.data)
     
     def patch(self, request, id=None):
-        id = request.data.get('id')
-        assign = Task.objects.get(id=id)
-        serializer = self.serializer_class(assign, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
-        return Response(serializer.errors)
-        
+        try:
+            assign = Task.objects.get(id=id, user=request.user.id)
+            serializer = self.serializer_class(assign, data=request.data, partial=True)
+            if serializer.is_valid():
+                return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
+            return Response(serializer.errors)
+        except:
+            return Response(({'details' : 'Task does not Found'}), status=status.HTTP_204_NO_CONTENT)
+    
         
 class TaskRatingView(APIView):
     serializer_class = RatingSerializer
+    permission_classes = [Manager_required]
+    authentication_classes = [authentication.TokenAuthentication]
     
     def get(self, request, id=None):
-        rating = Rating.objects.get(id=id)
+        rating = Rating.objects.all()
         serializer = self.serializer_class(rating, many=True)
         return Response(serializer.data)
-    
+ 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
+        print(serializer, 'serializer')
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
-    
+        
+        
     def patch(self, request, id=None):
         try:
             rating = Rating.objects.get(id=id)
@@ -186,9 +183,6 @@ class TaskRatingView(APIView):
                 return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
             return Response(serializer.errors)
         except:
-            return Response(({'message': 'You should be rating before'}), status=status.HTTP_204_NO_CONTENT)
-        
-    
-    
+            return Response(({'message': 'Rating does not Found'}), status=status.HTTP_204_NO_CONTENT)
     
     

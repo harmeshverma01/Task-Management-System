@@ -20,5 +20,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-users/', include('user.urls')),
     path('tasks/', include('task.urls'))
-
 ]
