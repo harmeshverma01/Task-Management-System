@@ -2,11 +2,12 @@ from rest_framework.response import Response
 from django.core.paginator import Paginator
 from rest_framework import authentication
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 
 from user.utils import Manager_required, admin_required
-from task.serializer import  RatingSerializer, TaskSerializer
-from .models import Rating, Task
+from task.serializer import  TaskSerializer
+from .models import Task
 from user.models import User
 
 # Create your views here.
@@ -20,7 +21,7 @@ class TaskView(APIView):
         user = request.data.get('user')
         if user == str(request.user.id): 
             return Response(({'message': "you can't assign task by own"}))
-        is_admin = User.objects.get(id=user)
+        is_admin = get_object_or_404(User, id=user)
         if is_admin.role=="admin":
             return Response(({'message': "you can't assign task to admin"}))
         request.data["manager"] = request.user.id
@@ -118,7 +119,6 @@ class TaskStatusView(APIView):
         return Response(serializer.data)   
     
     
-    
 class ManagertoManagerView(APIView):
     serializer_class = TaskSerializer
     authentication_classes = [authentication.TokenAuthentication]
@@ -146,43 +146,44 @@ class TaskCompleteView(APIView):
     
     def patch(self, request, id=None):
         try:
-            assign = Task.objects.get(id=id, user=request.user.id)
+            assign = Task.objects.get(user=request.user.id)
             serializer = self.serializer_class(assign, data=request.data, partial=True)
             if serializer.is_valid():
                 return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
             return Response(serializer.errors)
         except:
             return Response(({'details' : 'Task does not Found'}), status=status.HTTP_204_NO_CONTENT)
-    
+        
         
 class TaskRatingView(APIView):
-    serializer_class = RatingSerializer
+    serializer_class = TaskSerializer
     permission_classes = [Manager_required]
     authentication_classes = [authentication.TokenAuthentication]
     
     def get(self, request, id=None):
-        rating = Rating.objects.all()
+        rating = Task.objects.filter(manager=request.user.id)
         serializer = self.serializer_class(rating, many=True)
         return Response(serializer.data)
  
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        print(serializer, 'serializer')
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors)
-        
-        
+    # def post(self, request):
+    #     rating = Task.objects.filter(manager=request.user.id)
+    #     if rating:
+    #         serializer = self.serializer_class(data=request.data)
+    #         print(serializer, "serializer")
+    #         if serializer.is_valid():
+    #             serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     else:
+    #         return Response(({'message': "you don't have access to give rating "}), status=status.HTTP_400_BAD_REQUEST)
+          
     def patch(self, request, id=None):
-        try:
-            rating = Rating.objects.get(id=id)
+        rating = get_object_or_404(Task, id=id, manager=request.user.id)
+        if rating:
             serializer = self.serializer_class(rating, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
             return Response(serializer.errors)
-        except:
-            return Response(({'message': 'Rating does not Found'}), status=status.HTTP_204_NO_CONTENT)
-    
-    
+        else:
+            return Response(({'messsage': "you don't have a access to give rating"}), status=status.HTTP_400_BAD_REQUEST)
+       
