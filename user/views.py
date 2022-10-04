@@ -1,11 +1,12 @@
 from rest_framework import authentication, permissions
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from django.core.paginator import Paginator
+
 
 from django.contrib.auth.hashers import make_password
-from rest_framework.authtoken.models import Token
+from django.core.paginator import Paginator
 from django.contrib.auth import authenticate
 
 from .serializer import  LoginSerializer, UserSerializer
