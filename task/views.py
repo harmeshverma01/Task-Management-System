@@ -1,14 +1,16 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from django.core.paginator import Paginator
+from django.db.models import Avg
+
 from rest_framework import authentication
 from rest_framework.views import APIView
-from django.shortcuts import get_object_or_404
 from rest_framework import status
 
 from user.utils import Manager_required, admin_required
 from task.serializer import  TaskSerializer
-from .models import Task
 from user.models import User
+from .models import Task
 
 # Create your views here.
 
@@ -146,7 +148,7 @@ class TaskCompleteView(APIView):
     
     def patch(self, request, id=None):
         try:
-            assign = Task.objects.get(user=request.user.id)
+            assign = get_object_or_404(Task, id=id, user=request.user.id)
             serializer = self.serializer_class(assign, data=request.data, partial=True)
             if serializer.is_valid():
                 return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
@@ -165,17 +167,6 @@ class TaskRatingView(APIView):
         serializer = self.serializer_class(rating, many=True)
         return Response(serializer.data)
  
-    # def post(self, request):
-    #     rating = Task.objects.filter(manager=request.user.id)
-    #     if rating:
-    #         serializer = self.serializer_class(data=request.data)
-    #         print(serializer, "serializer")
-    #         if serializer.is_valid():
-    #             serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     else:
-    #         return Response(({'message': "you don't have access to give rating "}), status=status.HTTP_400_BAD_REQUEST)
-          
     def patch(self, request, id=None):
         rating = get_object_or_404(Task, id=id, manager=request.user.id)
         if rating:
@@ -186,4 +177,71 @@ class TaskRatingView(APIView):
             return Response(serializer.errors)
         else:
             return Response(({'messsage': "you don't have a access to give rating"}), status=status.HTTP_400_BAD_REQUEST)
-       
+
+
+class UserCheckTaskRatingView(APIView):
+    serializer_class = TaskSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    
+    def get(self, request, id=None):
+        rating = Task.objects.filter(user=request.user.id)
+        avg_rating = rating.aggregate(Avg('rating'))['rating__avg']
+        count_rating = rating.count()
+        task_count = rating.filter(user=request.user.id).count()
+        serializer = self.serializer_class(rating, many=True)
+        data = serializer.data
+        context = {
+            'avg_rating' : avg_rating,
+            'count_rating' : count_rating,
+            'task_count' : task_count,
+            'data' : data
+        }
+        return Response(context, status=status.HTTP_200_OK)
+     
+    
+class ManagerCheckTasKRatingView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [Manager_required]
+    serializer_class = TaskSerializer
+    
+    def get(self, request, id=None):
+        task_complete = Task.objects.filter(status='completed', manager=request.user.id)
+        print(task_complete, 'task_complete')
+        if task_complete:
+            low = task_complete.filter(rating__range=['1', '3'])
+            low_count = low.count()
+            low_value = self.serializer_class(low, many=True)
+            
+            high = task_complete.filter(rating__range=['4', '7'])
+            high_count = high.count()
+            high_value = self.serializer_class(high, many=True)
+            
+            excellent = task_complete.filter(rating__range=['8', '10'])
+            excellent_count = excellent.count()
+            excellent_value = self.serializer_class(excellent, many=True)
+            values = {
+                'Low' : low_value.data,
+                'High' : high_value.data,
+                'Excellent' : excellent_value.data
+            }
+            avg_rating = task_complete.aggregate(Avg('rating'))['rating__avg']
+            count_rating = task_complete.count()
+            context = {
+                'low_count' : low_count,
+                'high_count' : high_count,
+                'excellent_count' : excellent_count,
+                'avg_rating' : avg_rating,
+                'count_rating' : count_rating,
+                'values' : values,
+            }
+            return Response(context, status=status.HTTP_200_OK)
+        else:
+            return Response(({'message' : 'Task is not completed'}), status=status.HTTP_400_BAD_REQUEST)
+    
+      
+    
+
+
+    
+    
+    

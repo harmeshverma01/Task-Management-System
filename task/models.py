@@ -2,6 +2,7 @@ from django.db import models
 
 from user.models import User
 
+
 # Create your models here.
 
 class Task(models.Model):
@@ -17,6 +18,7 @@ class Task(models.Model):
     comment = models.CharField(max_length=200)
     status = models.CharField(choices=CHOICES, max_length=20, default='Todo')
     feedback = models.CharField(max_length=150)
+    rating = models.DecimalField(max_digits=5, decimal_places=0)
     
     def __str__(self) -> str:
         return self.title

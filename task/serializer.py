@@ -6,12 +6,14 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = '__all__'
-       
+        
 class TaskCompleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['comment'] 
         
-
+        
+  
+        
 
                
