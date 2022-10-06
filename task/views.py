@@ -201,35 +201,46 @@ class UserCheckTaskRatingView(APIView):
     
 class ManagerCheckTasKRatingView(APIView):
     authentication_classes = [authentication.TokenAuthentication]
-    serializer_class = TaskSerializer
     permission_classes = [Manager_required]
+    serializer_class = TaskSerializer
     
     def get(self, request, id=None):
-        rating = Task.objects.filter(manager=request.user.id)
-        if rating:
-            low = rating.filter(rating__range=['1', '4']).values()
-            print(low, "low")
-        if rating:
-            high = rating.filter(rating__range=['4', '7']).values()
-            print(high, "high")
-        if rating:
-            Excellent = rating.filter(rating__range=['7', '10']).values()
-        values = {
-            'Low' : low,
-            'High' : high,
-            'Excellent' : Excellent
-        }
-        serializer = self.serializer_class(values)
-        avg_rating = rating.aggregate(Avg('rating'))['rating__avg']
-        count_rating = rating.count()
-        serializer = self.serializer_class(values, many=True)
-        data = serializer.data
-        context = {
-            'avg_rating' : avg_rating,
-            'count_rating' : count_rating,
-            'data' : data
-        }
-        return Response(context, status=status.HTTP_200_OK)
+        task_complete = Task.objects.filter(status='completed', manager=request.user.id)
+        print(task_complete, 'task_complete')
+        if task_complete:
+            low = task_complete.filter(rating__range=['1', '3'])
+            low_count = low.count()
+            low_value = self.serializer_class(low, many=True)
+            
+            high = task_complete.filter(rating__range=['4', '7'])
+            high_count = high.count()
+            high_value = self.serializer_class(high, many=True)
+            
+            excellent = task_complete.filter(rating__range=['8', '10'])
+            excellent_count = excellent.count()
+            excellent_value = self.serializer_class(excellent, many=True)
+            values = {
+                'Low' : low_value.data,
+                'High' : high_value.data,
+                'Excellent' : excellent_value.data
+            }
+            avg_rating = task_complete.aggregate(Avg('rating'))['rating__avg']
+            count_rating = task_complete.count()
+            context = {
+                'low_count' : low_count,
+                'high_count' : high_count,
+                'excellent_count' : excellent_count,
+                'avg_rating' : avg_rating,
+                'count_rating' : count_rating,
+                'values' : values,
+            }
+            return Response(context, status=status.HTTP_200_OK)
+        else:
+            return Response(({'message' : 'Task is not completed'}), status=status.HTTP_400_BAD_REQUEST)
+    
+      
+    
+
 
     
     
