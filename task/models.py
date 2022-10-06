@@ -19,6 +19,8 @@ class Task(models.Model):
     status = models.CharField(choices=CHOICES, max_length=20, default='Todo')
     feedback = models.CharField(max_length=150)
     rating = models.DecimalField(max_digits=5, decimal_places=0)
+    amount_per_hour = models.FloatField()
+    working_hours = models.CharField(max_length=25)
     
     def __str__(self) -> str:
         return self.title

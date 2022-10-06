@@ -13,5 +13,7 @@ urlpatterns = [
     path('taskrating', TaskRatingView.as_view()),
     path('taskrating/<int:id>', TaskRatingView.as_view()),
     path('check_rating', UserCheckTaskRatingView.as_view()), 
-    path('managercheckrating', ManagerCheckTasKRatingView.as_view())
+    path('managercheckrating', ManagerCheckTasKRatingView.as_view()),
+    path('working_hour', WorkingHoursView.as_view()),
+    path('check_amount', AmountPerhourView.as_view())
 ]
