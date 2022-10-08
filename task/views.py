@@ -4,7 +4,6 @@ from django.core.paginator import Paginator
 from django.db.models import Avg
 from django.db.models import F, Sum
 
-
 from rest_framework import authentication
 from rest_framework.views import APIView
 from rest_framework import status
@@ -241,7 +240,6 @@ class ManagerCheckTasKRatingView(APIView):
             return Response(({'message' : 'Task is not completed'}), status=status.HTTP_400_BAD_REQUEST)
     
 
-
 class WorkingHoursView(APIView):
     serializer_class = TaskSerializer
     authentication_classes = [authentication.TokenAuthentication]
@@ -256,20 +254,25 @@ class WorkingHoursView(APIView):
         return Response(serializer.data)
     
     
-    
 class AmountPerhourView(APIView):
     authentication_classes = [authentication.TokenAuthentication]
     serializer_class = TaskSerializer
     
     def get(self, request, id=None):
         amount = Task.objects.filter(user=request.user.id)
-        print(amount, 'amount')
         task = amount.filter(status='completed')
         print(task, 'task')
-        hours = task.aggregate(total=Sum(F'amount_per_hour')* int(str(F('working_hours'))))['total']
+        hours = task.aggregate(total=Sum(F('amount_per_hour'))* (F('working_hours')))['total']
         print(hours, 'hours')
-        serializer = self.serializer_class(hours, many=True)
-        return Response(serializer.data)
+        serializer = self.serializer_class(task, many=True)
+        print(serializer, 'serializer')
+        data = serializer.data
+        print(data, 'data')
+        context = {
+            'amount_of_hours' : hours,
+            'data' : data,
+        }
+        return Response(context, status=status.HTTP_200_OK)
     
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -277,8 +280,10 @@ class AmountPerhourView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
-   
-            
+    
+
+
+    
 
 
     
