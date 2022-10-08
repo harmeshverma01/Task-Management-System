@@ -5,7 +5,6 @@ from django.db import models
 from user.models import User
 
 
-
 class Task(models.Model):
     CHOICES = (
         ("Todo" , "Todo"),

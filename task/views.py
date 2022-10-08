@@ -1,8 +1,8 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from django.core.paginator import Paginator
-from django.db.models import Avg
 from django.db.models import F, Sum
+from django.db.models import Avg
 
 from rest_framework import authentication
 from rest_framework.views import APIView
@@ -260,20 +260,26 @@ class AmountPerhourView(APIView):
     
     def get(self, request, id=None):
         amount = Task.objects.filter(user=request.user.id)
-        task = amount.filter(status='completed')
+        task = amount.filter(status='completed', approved=True)
         print(task, 'task')
+        completed_at = amount.filter(completed_date__range=['1', '30'])
+        print(completed_at, 'completed_at')
+        date = self.serializer_class(completed_at, many=True)
+        print(date, 'date')
         hours = task.aggregate(total=Sum(F('amount_per_hour'))* (F('working_hours')))['total']
         print(hours, 'hours')
         serializer = self.serializer_class(task, many=True)
+        
         print(serializer, 'serializer')
         data = serializer.data
         print(data, 'data')
         context = {
             'amount_of_hours' : hours,
+            'working_hours' : date,
             'data' : data,
         }
         return Response(context, status=status.HTTP_200_OK)
-    
+
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
@@ -281,7 +287,7 @@ class AmountPerhourView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors)
     
-
+        
 
     
 

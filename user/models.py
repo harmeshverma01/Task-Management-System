@@ -5,7 +5,6 @@ import uuid
 
 from .manager import UserManager
 
-# Create your models here.
 
 class User(AbstractBaseUser):
     ROLE = (
