@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from django.core.paginator import Paginator
+from django.db.models import F, Sum
 from django.db.models import Avg
 
 from rest_framework import authentication
@@ -8,7 +9,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from user.utils import Manager_required, admin_required
-from task.serializer import  TaskSerializer
+from task.serializer import   TaskSerializer
 from user.models import User
 from .models import Task
 
@@ -238,10 +239,60 @@ class ManagerCheckTasKRatingView(APIView):
         else:
             return Response(({'message' : 'Task is not completed'}), status=status.HTTP_400_BAD_REQUEST)
     
-      
+
+class WorkingHoursView(APIView):
+    serializer_class = TaskSerializer
+    authentication_classes = [authentication.TokenAuthentication]
+    
+    def get(self, request, id=None):
+        working_hours = Task.objects.filter(user=request.user.id)
+        print(working_hours, 'working_hours')
+        task = working_hours.filter(status='completed')
+        print(task, 'task')
+        serializer = self.serializer_class(task, many=True)
+        print(serializer, 'serializer')
+        return Response(serializer.data)
+    
+    
+class AmountPerhourView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    serializer_class = TaskSerializer
+    
+    def get(self, request, id=None):
+        amount = Task.objects.filter(user=request.user.id)
+        task = amount.filter(status='completed', approved=True)
+        print(task, 'task')
+        completed_at = amount.filter(completed_date__range=['1', '30'])
+        print(completed_at, 'completed_at')
+        date = self.serializer_class(completed_at, many=True)
+        print(date, 'date')
+        hours = task.aggregate(total=Sum(F('amount_per_hour'))* (F('working_hours')))['total']
+        print(hours, 'hours')
+        serializer = self.serializer_class(task, many=True)
+        
+        print(serializer, 'serializer')
+        data = serializer.data
+        print(data, 'data')
+        context = {
+            'amount_of_hours' : hours,
+            'working_hours' : date,
+            'data' : data,
+        }
+        return Response(context, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors)
+    
+        
+
     
 
 
+    
     
     
     
